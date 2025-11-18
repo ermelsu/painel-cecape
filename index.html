@@ -95,7 +95,7 @@
 </table>
 
 <script>
-const PLANILHA_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT5TbQshXscY_CKSXWmdtX7gfpYHOyDqKuDgReqcHQjpkWP6EotfNxp9sL-KQnrrQSTGevOhfVU1RnM/pubhtml";
+const PLANILHA_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT5TbQshXscY_CKSXWmdtX7gfpYHOyDqKuDgReqcHQjpkWP6EotfNxp9sL-KQnrrQSTGevOhfVU1RnM/pub?output=csv";
 
 async function carregarTabela() {
     const response = await fetch(PLANILHA_URL);
@@ -162,3 +162,4 @@ setInterval(carregarTabela, 30000);
 
 </body>
 </html>
+
