@@ -24,42 +24,40 @@
     table {
         width: 100%;
         border-collapse: collapse;
-        font-size: 1.4rem;
+        font-size: 1.2rem;
     }
 
     th {
         background: #0963b3;
-        padding: 15px;
+        padding: 12px;
         text-align: left;
         color: white;
     }
 
     td {
-        padding: 15px;
-        border-bottom: 2px solid rgba(255,255,255,0.15);
+        padding: 12px;
+        border-bottom: 2px solid rgba(255,255,255,0.1);
     }
 
-    /* Status - Em andamento */
     .andamento {
         background: #e9a44d;
         color: #112162;
         font-weight: bold;
-        padding: 8px 14px;
-        border-radius: 8px;
+        padding: 6px 12px;
+        border-radius: 6px;
         display: inline-block;
     }
 
-    /* Efeito flip antigo */
     .flip {
         display: inline-block;
         background: #000;
         color: #0f0;
-        padding: 6px 12px;
+        padding: 4px 10px;
         border-radius: 4px;
         font-family: 'Courier New', monospace;
-        font-size: 1.2rem;
+        font-size: 1rem;
         transform-origin: bottom;
-        animation: flip 0.6s ease-in-out;
+        animation: flip 0.5s ease-in-out;
     }
 
     @keyframes flip {
@@ -77,7 +75,9 @@
     <thead>
         <tr>
             <th>Sala</th>
-            <th>Local</th>
+            <th>Bloco</th>
+            <th>Andar</th>
+            <th>Professor</th>
             <th>Horário</th>
             <th>Status</th>
         </tr>
@@ -88,7 +88,6 @@
 <script>
 const url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT5TbQshXscY_CKSXWmdtX7gfpYHOyDqKuDgReqcHQjpkWP6EotfNxp9sL-KQnrrQSTGevOhfVU1RnM/pub?output=csv";
 
-// Função para criar flip
 function wrapFlip(text) {
     return `<span class="flip">${text}</span>`;
 }
@@ -98,27 +97,39 @@ async function carregarPainel() {
         const resposta = await fetch(url);
         const csv = await resposta.text();
 
-        // Converter CSV com separador ";"
+        // separador ; (confirmado pelo Google Sheets)
         const linhas = csv.split("\n").map(l => l.split(";"));
 
         const tbody = document.querySelector("#painel tbody");
         tbody.innerHTML = "";
 
-        // Pula o cabeçalho
+        // Cabeçalho: Sala | Bloco | Andar | Professor | Horario | Status
         for (let i = 1; i < linhas.length; i++) {
-            const [sala, local, horario, status] = linhas[i];
+            const linha = linhas[i];
 
-            if (!sala) continue;
+            if (linha.length < 6) continue;
+
+            const sala = linha[0] || "";
+            const bloco = linha[1] || "";
+            const andar = linha[2] || "";
+            const professor = linha[3] || "";
+            const horario = linha[4] || "";
+            const status = (linha[5] || "").trim();
+
+            // ignorar linhas totalmente vazias
+            if (!sala && !bloco && !andar && !professor) continue;
 
             const tr = document.createElement("tr");
 
             tr.innerHTML = `
                 <td>${wrapFlip(sala)}</td>
-                <td>${wrapFlip(local)}</td>
+                <td>${wrapFlip(bloco)}</td>
+                <td>${wrapFlip(andar)}</td>
+                <td>${wrapFlip(professor)}</td>
                 <td>${wrapFlip(horario)}</td>
                 <td>
                     ${
-                        status.trim().toLowerCase() === "em andamento"
+                        status.toLowerCase() === "em andamento"
                         ? `<span class="andamento">Em Andamento</span>`
                         : wrapFlip(status)
                     }
@@ -127,12 +138,12 @@ async function carregarPainel() {
 
             tbody.appendChild(tr);
         }
+
     } catch (e) {
         console.error("Erro ao carregar CSV:", e);
     }
 }
 
-// Atualiza a cada 30 segundos
 carregarPainel();
 setInterval(carregarPainel, 30000);
 </script>
