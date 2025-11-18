@@ -1,73 +1,83 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
 <meta charset="UTF-8" />
-<title>Painel CECAPE</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Painel de Salas - CECAPE</title>
+
 <style>
     body {
         background: #112162;
+        font-family: Arial, sans-serif;
         color: white;
-        font-family: "Segoe UI", sans-serif;
         margin: 0;
+        padding: 20px;
     }
+
     h1 {
         text-align: center;
-        padding: 20px;
+        margin-bottom: 30px;
         color: #e9a44d;
-        font-size: 40px;
+        font-size: 2.2rem;
     }
+
     table {
-        width: 95%;
-        margin: auto;
+        width: 100%;
         border-collapse: collapse;
-        font-size: 22px;
+        font-size: 1.4rem;
     }
+
     th {
         background: #0963b3;
-        padding: 14px;
-        text-transform: uppercase;
-    }
-    td {
-        background: #7092c4;
-        padding: 10px;
-        border-bottom: 2px solid #112162;
-        font-weight: 600;
-        text-align: center;
+        padding: 15px;
+        text-align: left;
+        color: white;
     }
 
-    /* Flipboard animation */
+    td {
+        padding: 15px;
+        border-bottom: 2px solid rgba(255,255,255,0.15);
+    }
+
+    /* Status - Em andamento */
+    .andamento {
+        background: #e9a44d;
+        color: #112162;
+        font-weight: bold;
+        padding: 8px 14px;
+        border-radius: 8px;
+        display: inline-block;
+    }
+
+    /* Efeito flip antigo */
     .flip {
         display: inline-block;
-        animation: flipAnim 0.6s ease-in-out;
+        background: #000;
+        color: #0f0;
+        padding: 6px 12px;
+        border-radius: 4px;
+        font-family: 'Courier New', monospace;
+        font-size: 1.2rem;
+        transform-origin: bottom;
+        animation: flip 0.6s ease-in-out;
     }
-    @keyframes flipAnim {
+
+    @keyframes flip {
         0% { transform: rotateX(90deg); opacity: 0; }
-        100% { transform: rotateX(0); opacity: 1; }
+        100% { transform: rotateX(0deg); opacity: 1; }
     }
-
-    /* STATUS COLORS */
-    .ANDAMENTO {
-        background: #f4d03f !important;
-        color: #000 !important;
-        font-weight: 900;
-    }
-    .OCUPADA { background: #f48407 !important; }
-    .LIVRE { background: #2ecc71 !important; }
-    .EVENTO { background: #0963b3 !important; }
-    .MANUTENCAO, .MANUTENÇÃO { background: #c0392b !important; }
 </style>
+
 </head>
-
 <body>
-<h1>Painel de Salas - CECAPE</h1>
 
-<table id="tabela">
+<h1>Painel de Salas • CECAPE</h1>
+
+<table id="painel">
     <thead>
         <tr>
             <th>Sala</th>
-            <th>Bloco</th>
-            <th>Andar</th>
-            <th>Professor</th>
+            <th>Local</th>
             <th>Horário</th>
             <th>Status</th>
         </tr>
@@ -76,41 +86,56 @@
 </table>
 
 <script>
-const URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT5TbQshXscY_CKSXWmdtX7gfpYHOyDqKuDgReqcHQjpkWP6EotfNxp9sL-KQnrrQSTGevOhfVU1RnM/gviz/tq?tqx=out:json";
+const url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT5TbQshXscY_CKSXWmdtX7gfpYHOyDqKuDgReqcHQjpkWP6EotfNxp9sL-KQnrrQSTGevOhfVU1RnM/pub?output=csv";
 
-async function carregarTabela() {
-    const resposta = await fetch(URL);
-    let texto = await resposta.text();
+// Função para criar flip
+function wrapFlip(text) {
+    return `<span class="flip">${text}</span>`;
+}
 
-    // Remove o lixo do Google: "/*O_o*/" e "google.visualization.Query.setResponse("
-    texto = texto
-        .replace("/*O_o*/", "")
-        .replace("google.visualization.Query.setResponse(", "")
-        .replace(/\);$/, "");
+async function carregarPainel() {
+    try {
+        const resposta = await fetch(url);
+        const csv = await resposta.text();
 
-    const json = JSON.parse(texto);
-    const linhas = json.table.rows;
+        // Converter CSV com separador ";"
+        const linhas = csv.split("\n").map(l => l.split(";"));
 
-    const tbody = document.querySelector("#tabela tbody");
-    tbody.innerHTML = "";
+        const tbody = document.querySelector("#painel tbody");
+        tbody.innerHTML = "";
 
-    linhas.forEach(linha => {
-        const c = linha.c;
-        if (!c || c.length < 6) return;
+        // Pula o cabeçalho
+        for (let i = 1; i < linhas.length; i++) {
+            const [sala, local, horario, status] = linhas[i];
 
-        const tr = document.createElement("tr");
+            if (!sala) continue;
 
-        c.forEach((col, i) => {
-            const td = document.createElement("td");
-            const span = document.createElement("span");
+            const tr = document.createElement("tr");
 
-            const valor = col ? col.v : "";
+            tr.innerHTML = `
+                <td>${wrapFlip(sala)}</td>
+                <td>${wrapFlip(local)}</td>
+                <td>${wrapFlip(horario)}</td>
+                <td>
+                    ${
+                        status.trim().toLowerCase() === "em andamento"
+                        ? `<span class="andamento">Em Andamento</span>`
+                        : wrapFlip(status)
+                    }
+                </td>
+            `;
 
-            span.classList.add("flip");
-            span.textContent = valor;
+            tbody.appendChild(tr);
+        }
+    } catch (e) {
+        console.error("Erro ao carregar CSV:", e);
+    }
+}
 
-            td.appendChild(span);
+// Atualiza a cada 30 segundos
+carregarPainel();
+setInterval(carregarPainel, 30000);
+</script>
 
-            // STATUS
-            if (i === 5) {
-                const classe = valor.toUpperCase().normalize("NFD").replace(/[\u0]()
+</body>
+</html>
