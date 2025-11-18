@@ -76,49 +76,41 @@
 </table>
 
 <script>
-const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT5TbQshXscY_CKSXWmdtX7gfpYHOyDqKuDgReqcHQjpkWP6EotfNxp9sL-KQnrrQSTGevOhfVU1RnM/pub?output=csv";
+const URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT5TbQshXscY_CKSXWmdtX7gfpYHOyDqKuDgReqcHQjpkWP6EotfNxp9sL-KQnrrQSTGevOhfVU1RnM/gviz/tq?tqx=out:json";
 
 async function carregarTabela() {
-    const response = await fetch(CSV_URL);
-    const csv = await response.text();
+    const resposta = await fetch(URL);
+    let texto = await resposta.text();
 
-    const linhas = csv.split("\n").map(l => l.split(","));
+    // Remove o lixo do Google: "/*O_o*/" e "google.visualization.Query.setResponse("
+    texto = texto
+        .replace("/*O_o*/", "")
+        .replace("google.visualization.Query.setResponse(", "")
+        .replace(/\);$/, "");
+
+    const json = JSON.parse(texto);
+    const linhas = json.table.rows;
 
     const tbody = document.querySelector("#tabela tbody");
     tbody.innerHTML = "";
 
-    linhas.forEach((cols, index) => {
-        if (index === 0) return; // pula cabeçalho
-
-        if (cols.length < 6) return;
+    linhas.forEach(linha => {
+        const c = linha.c;
+        if (!c || c.length < 6) return;
 
         const tr = document.createElement("tr");
 
-        cols.forEach((valor, i) => {
+        c.forEach((col, i) => {
             const td = document.createElement("td");
             const span = document.createElement("span");
 
+            const valor = col ? col.v : "";
+
             span.classList.add("flip");
-            span.textContent = valor.trim();
+            span.textContent = valor;
 
             td.appendChild(span);
 
-            // STATUS (última coluna)
+            // STATUS
             if (i === 5) {
-                const classe = valor.trim().toUpperCase();
-                td.classList.add(classe);
-            }
-
-            tr.appendChild(td);
-        });
-
-        tbody.appendChild(tr);
-    });
-}
-
-carregarTabela();
-setInterval(carregarTabela, 30000); // atualiza a cada 30s
-</script>
-
-</body>
-</html>
+                const classe = valor.toUpperCase().normalize("NFD").replace(/[\u0]()
